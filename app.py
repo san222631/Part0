@@ -4,9 +4,11 @@ from fastapi.responses import FileResponse, JSONResponse
 from typing import Optional
 import mysql.connector
 from mysql.connector import Error
+from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI()
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Static Pages (Never Modify Code in this Block)
 @app.get("/", include_in_schema=False)
@@ -59,13 +61,13 @@ def fetch_data(page: int, keyword: Optional[str]):
         results = cursor.fetchall()
         return results
     except Exception as e:
-        print(f"Error fetching data: {e}")
+        print(f"Internal Server Error: {e}")
         raise HTTPException(
             status_code=500,
             detail={
                 "error": True,
                 "message":"伺服器內部錯誤"
-                })
+                })  
     finally:
         if cursor is not None:
             cursor.close()
@@ -98,6 +100,7 @@ def get_attractions(page: int = 0, keyword: Optional[str] = Query(None)):
         } for item in data]
     }
     return response
+
 
 #___________________________________________________________________________________________
 #for /api/attraction/{attractionId} 根據景點編號取得景點資料
@@ -167,21 +170,24 @@ def fetch_mrts():
     cursor = None
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
+        #print("Connection object:", conn)
         cursor = conn.cursor(dictionary=True)
+        #print("Cursor object:", cursor)
         #cursor.execute("SET SESSION group_concat_max_len = 1000000;")
 
         query = """
         SELECT MRT, COUNT(*) AS mrt_count
         FROM usefuldata
-	WHERE MRT IS NOT NULL
+        WHERE MRT IS NOT NULL
         GROUP BY MRT
         ORDER BY mrt_count DESC;
         """
         #print("This is ID query", attractionId) #找錯誤
         cursor.execute(query)
         result = cursor.fetchall()
-        #print("找到的結果", result)
+        print("找到的結果", result)
         return result
+
     except Exception as e:
         print(f"Internal Server Error: {e}")
         raise HTTPException(
