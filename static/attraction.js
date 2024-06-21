@@ -1,36 +1,32 @@
-let observer;
 
-document.addEventListener('DOMContentLoaded', function () {
+//用async+await因為跟api要的資料馬上會給使用者看到
+document.addEventListener('DOMContentLoaded', async() => {
     fetchUserInfo()
-    fetchAttractions(0);
-    fetchMRTStations();
+    //拿url的port以後的部分，這邊是拿"8000/"以後的"/attraction/id"
+    const pathname = window.location.pathname;
+    //得到"/attraction/id"以後，用/分開然後取最後一個
+    const specialId = pathname.split('/').pop();
 
-    observer = new IntersectionObserver(handleIntersection, {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0
-    });
 
-    const sentinel = document.createElement('div');
-    sentinel.id = 'sentinel';
-    document.body.appendChild(sentinel);
-    observer.observe(sentinel);
+    try {
+        //等fetch call拿到promise以後才做下一步動作
+        const response = await fetch(`/api/attraction/${specialId}`);
+        //如果response有問題
+        if (!response.ok) {
+            throw new Error(`/api/attraction/id送過來的response有錯誤: ${response.statusText}`);
+        }
 
-    document.getElementById('search-button').addEventListener('click', function () {
-        const keyword = document.getElementById('search-input').value;
-        searchAttractions(keyword);
-        fetchUserInfo()
-    });
+        //把收到的response變成json格式
+        const data = await response.json();
+        //檢查json
+        console.log(data);
 
-    //MRT 左右滑動的按鍵
-    document.getElementById('scroll-left').addEventListener('click', function() {
-        document.getElementById('mrt-list').scrollBy({ left: -200, behavior: 'smooth' });
-    });
+        addDetails(data);
 
-    document.getElementById('scroll-right').addEventListener('click', function() {
-        document.getElementById('mrt-list').scrollBy({ left: 200, behavior: 'smooth' });
-    });
-
+    } catch (error) {
+        console.error('收到response前有錯誤:', error);
+        document.getElementById('check').textContent = '加載細節失敗';
+    }
 
     //處理登入
     const modal = document.getElementById('modal');
@@ -38,48 +34,48 @@ document.addEventListener('DOMContentLoaded', function () {
     const closeButton = document.getElementById('close-button');
     const loginButton = document.getElementById('login-button');
     const errorMessage = document.getElementById('error-message');
-    const login_register = document.getElementById('login-register');
-    const logout = document.getElementById('logout');
+    const login_register = document.getElementById('login-register')
+    const logout = document.getElementById('logout')
     const authForm = document.getElementById('auth-form');
 
-  
+    
     loginRegister.addEventListener('click', () => {
-      modal.style.display = 'block';
+        modal.style.display = 'block';
     });
-  
+    
     closeButton.addEventListener('click', () => {
-      modal.style.display = 'none';
-      errorMessage.textContent = ''; //為什麼每次關閉前要加這個?
+        modal.style.display = 'none';
+        errorMessage.textContent = ''; //為什麼每次關閉前要加這個?
     });
-  
+    
     window.addEventListener('mousedown', (event) => {
-      if (event.target == modal) {
+        if (event.target == modal) {
         modal.style.display = 'none';
         errorMessage.textContent = '';
-      }
+        }
     });
-  
+    
     authForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-  
-      fetch('/api/user/auth', {
+        event.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+    
+        fetch('/api/user/auth', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({ email: email, password: password })
-      })
-      .then(response => {
+        })
+        .then(response => {
         if (!response.ok) {
-          return response.json().then(data => {
+            return response.json().then(data => {
             throw new Error(data.detail.message);
-          });
+            });
         }
         return response.json();
-      })
-      .then(data => {
+        })
+        .then(data => {
         if (data.token){
             localStorage.setItem('received_Token', data.token);
             console.log('Token存進了LocalStorage', data.token);
@@ -89,11 +85,11 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             throw new Error('無效的token response');
         }
-      })
-      .catch(error => {
+        })
+        .catch(error => {
         errorMessage.textContent = error.message;
         console.error('Error是:', error.message); 
-      });
+        });
     });
 
 
@@ -123,8 +119,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.addEventListener('click', (event) => {
         if (event.target == R_modal) {
-          R_modal.style.display = 'none';
-          R_errorMessage.textContent = '';
+            R_modal.style.display = 'none';
+            R_errorMessage.textContent = '';
         }
     });
 
@@ -147,8 +143,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.log("收到的response裡面的data:", data)
                     throw new Error(data.detail.message);
                 });
-              }
-              return response.json();
+                }
+                return response.json();
         })
         .then(data => {
             if (data){
@@ -168,148 +164,115 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-
-
-
-let currentPage = 0;
+//避免使用者手賤一秒按10次
 let fetching = false;
 
-function fetchAttractions(page, keyword = '') {
+//加入各種資料
+function addDetails(details) {
     if (fetching) return;
     fetching = true;
 
-    fetch(`/api/attractions/?page=${page}&keyword=${encodeURIComponent(keyword)}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const gridContent = document.getElementById('grid-content');
-            if (page === 0) {
-                gridContent.innerHTML = '';
-            }
-
-            data.data.forEach(attraction => {
-                const card = createAttractionCard(attraction);
-                gridContent.appendChild(card);
-            });
-
-            // Ensure the sentinel is re-created and appended if necessary
-            let sentinel = document.getElementById('sentinel');
-            if (!sentinel) {
-                sentinel = document.createElement('div');
-                sentinel.id = 'sentinel';
-            }
-            gridContent.appendChild(sentinel);
-
-            observer.observe(sentinel);
-
-            currentPage = data.nextPage;
-            fetching = false;
-        })
-        .catch(error => {
-            console.error('Error loading the attractions:', error);
-            fetching = false;
-        });
-}
-
-
-//MRT捷運站FUNTION
-function fetchMRTStations() {
-    fetch('/api/mrts')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const mrtList = document.getElementById('mrt-list');
-            data.data.forEach(station => { // Access the 'data' array in the response
-                const stationItem = document.createElement('div');
-                stationItem.className = 'mrt-item';
-                stationItem.textContent = station;
-
-                //增加了點擊捷運站名就會將他送進關鍵字搜尋的eventlistener!
-                stationItem.addEventListener('click', function(){
-                    document.getElementById('search-input').value = station;
-                    searchAttractions(station);
-                    fetchUserInfo();
-                });
-
-                mrtList.appendChild(stationItem);
-            });
-        })
-        .catch(error => {
-            console.error('Error loading MRT stations:', error);
-        });
-}
-
-
-
-
-
-
-
-
-
-//用關鍵字找景點
-function searchAttractions(keyword) {
-    currentPage = 0;
-    fetchAttractions(currentPage, keyword);
-}
-
-//產生每個景點的<div><class>，包括圖片、名稱、捷運站、分類，
-function createAttractionCard(attraction) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    //增加了每個景點獨特的id以及偵測有沒有被click
-    card.id = attraction.id;
-    card.addEventListener('click', function(){
-        fetchUserInfo().then(function(){
-            //確保檢查過token以後才redirect
-            window.location.href = `/attraction/${attraction.id}`;
-        }).catch(function(){
-            //如果用戶token無效或未登入
-            window.location.href = `/attraction/${attraction.id}`;
-        })
+    const goIndex = document.getElementById('go-index');
+    goIndex.addEventListener('click', function(){
+        window.location.href = '/';
     });
 
-    const image = document.createElement('img');
-    image.src = attraction.images[0];
-    image.alt = attraction.name;
-    image.className = 'attraction-image';
+    const imageList = document.getElementById('image-list');   
 
-    const name = document.createElement('div');
-    name.textContent = attraction.name;
-    name.className = 'attraction-name';
+    details.data.images.forEach(image => {
+        const picture = document.createElement('img');
+        picture.src = image
+        picture.className = 'picture';
+        picture.alt = details.data.name;
+        imageList.appendChild(picture);
+    });
 
-    const category = document.createElement('div');
-    category.textContent = attraction.category;
-    category.className = 'attraction-category';
+    //一開始先幫每張圖片加入圈圈，然後把第一張的class變成active
+    const circleList = document.getElementById('allCircles');
+    details.data.images.forEach((_, index) => {
+        const circle = document.createElement('div');
+        circle.className = 'circle';
+        //circle的class本來是.circle，現在變.circle.active
+        if (index === 0) circle.classList.add('active');
+        circleList.appendChild(circle);
+    })
 
-    const mrt = document.createElement('div');
-    mrt.textContent = attraction.mrt;
-    mrt.className = 'attraction-mrt';
+    //圖片slide show的關鍵
+    setupCarousel();
 
-    card.appendChild(image);
-    card.appendChild(name);
-    card.appendChild(category);
-    card.appendChild(mrt);
+    //加入不同的內容
+    const name = document.getElementById('name');
+    name.textContent = details.data.name;
 
-    return card;
+    const CAT_MRT = document.getElementById('CAT_MRT');
+    CAT_MRT.textContent = `${details.data.category} at  ${details.data.mrt}`;
+
+    const description = document.getElementById('description');
+    description.textContent = details.data.description;
+
+    const address = document.getElementById('address');
+    address.textContent = details.data.address;
+
+    const transport = document.getElementById('transport');
+    transport.textContent = details.data.transport;    
 }
 
-function handleIntersection(entries, observer) {
-    entries.forEach(entry => {
-        if (entry.isIntersecting && currentPage !== null) {
-            const keyword = document.getElementById('search-input').value;
-            fetchAttractions(currentPage, keyword);
+
+//圖片slide show旋轉木馬的關鍵
+function setupCarousel() {
+    //選擇所有的圖片+確認總共有幾張
+    const imageList = document.getElementById('image-list');
+    const allImages = imageList.querySelectorAll('img');
+    const numberImages = allImages.length;
+    //選擇所有的circle elements
+    const allCircles = document.querySelectorAll('.circle');
+    //從第1張圖片開始, index=0
+    let currentIndex = 0;
+
+
+    //操縱css裡面.image-list的transform
+    //在X軸上translate移動
+    //移動圖片的同時，也讓圈圈的class轉換，用圖片的index確認是哪一個圈圈要變active
+    function showImage(index) {
+        imageList.style.transform = `translateX( -${index *100}%)`;
+        allCircles.forEach((eachCircle, i) => {
+            eachCircle.classList.toggle('active', i === index);
+        })
+    };
+
+    document.getElementById('scroll-left').addEventListener(
+        'click', function() {
+            currentIndex = (currentIndex - 1 + numberImages) % numberImages;
+            showImage(currentIndex);
         }
-    });
+    );
+
+    document.getElementById('scroll-right').addEventListener(
+        'click', function() {
+        currentIndex = (currentIndex + 1) % numberImages;
+        showImage(currentIndex);
+        }
+    );
+
+    showImage(currentIndex);
+};
+
+
+
+//顯示及時價格
+function updateCost() {
+    //querySelector用來選第一個有這個name、class、tag、attribute屬性的element，或選多個elements
+    const selectedTime = document.querySelector('input[name="time"]:checked').value;
+    //getElementById只能選一個element
+    const costElement = document.getElementById('real-price');
+
+    if (selectedTime === 'morning') {
+        costElement.textContent = '新台幣 2000元';
+    } else if (selectedTime === 'afternoon') {
+        costElement.textContent = '新台幣 2500元';
+    }
 }
+
 
 
 
@@ -379,4 +342,3 @@ document.getElementById('logout').addEventListener('click', function(){
     //登出後重整頁面
     location.reload();
 })
-

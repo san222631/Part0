@@ -4,8 +4,171 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attraction</title>
+  <link rel="stylesheet" href="/static/attraction.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!--最上面的Navigation-->
+  <nav>
+    <div class="nav-container">
+      <ul class="menu">
+        <li class="menu-left" id="go-index">台北一日遊</li>
+        <div class="menu-right-container">
+          <li class="menu-right">預定行程</li>
+          <li class="only-occupy-1space">
+            <span class="menu-right-login" id="login-register">登入/註冊</span>
+            <span class="menu-right-logout" id="logout">登出系統</span>
+          </li>
+        </div>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="seperator"></div>
+
+
+
+  <div class="main-section" id="main-section">
+
+    <div class="grid-container" id="grid-container">
+
+      <!--左邊的grid-->
+      <div class="image-container">
+        <button class="scroll-button left" id="scroll-left"></button>
+        <div class="image-list-wrapper" id="image-list-wrapper">
+          <div class="image-list" id="image-list"></div>
+        </div>
+        <button class="scroll-button right" id="scroll-right"></button>
+        <!--下面的圈圈-->
+        <div class="allCircles" id="allCircles"></div>
+      </div>
+
+      <!--右邊的grid-->
+      <div class="profile" id="profile">
+        <div class="name" id="name"></div>
+        <div class="CAT_MRT" id="CAT_MRT"></div>
+        <div class="booking-form" id="booking-form">
+          <div class="title">訂購導覽行程</div>
+          <div class="content">以此景點為中心的一日行程，帶您探索城市角落故事</div>
+          <div class="reserve-box">
+            <!--選擇日期-->
+            <div class="date">
+              <label for="selected-date">
+                選擇日期:
+              </label>  
+              <input type="date" id="selected-date">
+            </div>
+            <!--選擇時間-->
+            <div class="time">
+              <label for="selected-time">
+              選擇時間:
+              </label>
+              <!--radio buttons通常在一個group裡面，有同樣的name屬性，有不同的value-->
+              <label class="time-option" for="specifyColor">
+                <input type="radio" name="time" value="morning" onchange="updateCost()" id="specifyColor"> 上半天
+              </label>
+              <label class="time-option" for="specifyColor">
+                <input type="radio" name="time" value="afternoon" onchange="updateCost()" id="specifyColor"> 下半天
+              </label>
+            </div>
+            <!--顯示費用-->
+            <div class="cost" id="cost">
+              <label for="selected-cost">
+              導覽費用: 
+              </label>
+              <label id="real-price">
+              新台幣 0元
+              </label>
+            </div>
+            <button type="reserve" id="reserve">開始預約行程</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="seperator-2"></div>
+
+  <div class="horizontal-center">
+    <div class="infors" id="infors">
+      <div class="content-2" id="description"></div>
+      <div class="group">
+        <div class="title-2">景點地址 :</div>
+        <div class="content-2" id="address"></div>
+      </div>
+      <div class="group">
+        <div class="title-2">交通方式 :</div>
+        <div class="content-2" id="transport"></div>
+      </div>
+    </div>
+  </div>
   
+  <!-- 登入 Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <div class="decorator-bar"></div>
+      <div class="content-wrapper">
+        <div class="close-button" id="close-button"></div>
+        <form id="auth-form">
+          <div class="dialog-topic">登入會員帳戶</div>
+          <div class="form-group">
+            <input type="email" id="email" name="email" placeholder="輸入電子信箱" required>
+          </div>
+          <div class="form-group">
+            <input type="password" id="password" name="password" placeholder="輸入密碼" required>
+          </div>
+          <div id="error-message" class="error-message"></div>
+          <button type="submit" id="login-button">登入帳戶</button>
+        </form>
+        <div id="register" class="register">還沒有帳戶? 點此註冊</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 註冊R-Modal -->
+  <div id="R-modal" class="R-modal">
+    <div class="R-modal-content">
+      <div class="decorator-bar"></div>
+      <div class="R-content-wrapper">
+        <div class="R-close-button" id="R-close-button"></div>
+        <form id="R-form">
+          <div class="dialog-topic">註冊會員帳號</div>
+          <div class="form-group">
+            <input type="text" id="R-name" name="R-name" placeholder="輸入姓名" required>
+          </div>
+          <div class="form-group">
+            <input type="email" id="R-email" name="R-email" placeholder="輸入電子郵件" required>
+          </div>
+          <div class="form-group">
+            <input type="password" id="R-password" name="R-password" placeholder="輸入密碼" required>
+          </div>
+          <div id="R-error-message" class="R-error-message"></div>
+          <button type="submit" id="R-button">註冊新帳戶</button>
+        </form>
+        <div id="back-to-login" class="back-to-login">已經有帳戶了?點此登入</div>
+      </div>
+    </div>
+  </div>
+
+
+  <footer class="footer">
+    COPYRIGHT © 2021 台北一日遊
+  </footer>
+
+
+
+
+
+  
+<!--JS檢查用的，最後要刪掉，加載失敗會出現-->
+<div id="check"></div>
+
+
+
+<script type="application/javascript" src="/static/attraction.js"></script>
+
 </body>
 </html>
