@@ -1,4 +1,3 @@
-
 from fastapi import *
 from fastapi.responses import FileResponse, JSONResponse
 from typing import Optional
@@ -473,6 +472,4 @@ def get_mrts():
     }
     return response
 
-
      
-
