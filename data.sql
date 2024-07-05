@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.37, for Win64 (x86_64)
 --
--- Host: localhost    Database: mydatabase
+-- Host: localhost    Database: tp_attractions
 -- ------------------------------------------------------
 -- Server version	8.0.37
 
