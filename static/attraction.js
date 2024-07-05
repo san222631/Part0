@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', async() => {
     //得到"/attraction/id"以後，用/分開然後取最後一個
     const specialId = pathname.split('/').pop();
 
+    //避免使用者選擇過去的日期
+    setMinDate();
+
     try {
         //等fetch call拿到promise以後才做下一步動作
         const response = await fetch(`/api/attraction/${specialId}`);
@@ -413,4 +416,14 @@ document.getElementById('start-booking').addEventListener('click', async functio
 //彈出登入視窗
 function showLoginModal() {
     document.getElementById('modal').style.display = 'block';
+}
+
+
+//避免使用者選擇過去的日期
+function setMinDate() {
+    const dateInput = document.getElementById('selected-date');
+    const today = new Date();
+    today.setDate(today.getDate() + 1);  // Set to tomorrow's date
+    const dateString = today.toISOString().split('T')[0]; // Convert to "yyyy-mm-dd"
+    dateInput.setAttribute('min', dateString);
 }
