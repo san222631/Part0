@@ -124,11 +124,11 @@ document.addEventListener('DOMContentLoaded', async() => {
             // Get prime
             TPDirect.card.getPrime((result) => {
                 if (result.status !== 0) {
-                    alert('Failed to get prime: ' + result.msg);
+                    console.log('Failed to get prime: ' + result.msg);
                     return;
                 }
 
-                alert('Get prime success, prime: ' + result.card.prime);
+                console.log('Get prime success, prime: ' + result.card.prime);
 
                 // Send prime to your server
                 const token = localStorage.getItem('received_Token');
